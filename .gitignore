@@ -26,6 +26,7 @@ yarn-error.log
 /config/tg-logger.php
 /docker/nginx/logs
 /docker/nginx/default.conf
+/docker/nginx/conf.d/default.conf
 /docker/grafana
 /docker/postgres
 /storage/api-docs

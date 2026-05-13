@@ -73,7 +73,7 @@ run_step "sudo certbot certonly --standalone -d $GRAFANA_DOMAIN" "Выпуск �
 run_step "sudo certbot certonly --standalone -d $NODE_DOMAIN" "Выпуск сертификата для $NODE_DOMAIN"
 
 # Конфигурация Nginx
-run_step "sed 's|__MAIN_DOMAIN__|$MAIN_DOMAIN|g' docker/nginx/default.conf.template > docker/nginx/default.conf" "Создание конфигурации Nginx"
+run_step "sed 's|__MAIN_DOMAIN__|$MAIN_DOMAIN|g' docker/nginx/default.conf.template > docker/nginx/conf.d/default.conf" "Создание конфигурации Nginx"
 
 # Запуск Docker Compose
 run_step "docker-compose build" "Запуск Docker Compose"

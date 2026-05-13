@@ -1,8 +1,4 @@
-# Локальная разработка: HTTP без Let's Encrypt.
-# Запуск: docker compose -f docker-compose.yml -f docker-compose.local.yml up -d
-services:
-    nginx:
-        volumes:
-            - .:/var/www
-            - ./docker/nginx/local-dev.conf:/etc/nginx/conf.d/default.conf:ro
-            - ./docker/nginx/logs:/var/log/nginx
+# Совместимость: `docker compose -f docker-compose.local.yml up -d` эквивалентен `docker compose up -d`.
+# Локальный HTTP: docker/nginx/conf.d/00-local-http.conf
+include:
+    - path: docker-compose.yml
