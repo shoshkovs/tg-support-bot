@@ -1,0 +1,88 @@
+<?php
+
+namespace Tests\Feature\Jobs;
+
+use App\Models\BotUser;
+use App\Models\Message;
+use App\Modules\Telegram\Actions\DeleteForumTopic;
+use App\Modules\Telegram\Api\TelegramMethods;
+use App\Modules\Telegram\DTOs\TelegramUpdateDto;
+use App\Modules\Telegram\DTOs\TGTextMessageDto;
+use App\Modules\Telegram\Jobs\SendTelegramMessageJob;
+use App\Modules\Telegram\Jobs\TopicCreateJob;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Mocks\Tg\Answer\TelegramAnswerDtoMock;
+use Tests\Mocks\Tg\TelegramUpdateDtoMock;
+use Tests\TestCase;
+
+class SendTelegramMessageJobTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private TelegramUpdateDto $dto;
+
+    private ?BotUser $botUser;
+
+    public function setUp(): void
+    {
+        parent::setUp();
+
+        Message::truncate();
+
+        $this->dto = TelegramUpdateDtoMock::getDto();
+        $this->botUser = BotUser::getOrCreateByTelegramUpdate($this->dto);
+
+        $jobTopicCreate = new TopicCreateJob(
+            $this->botUser->id,
+        );
+        $jobTopicCreate->handle();
+
+        $this->botUser->refresh();
+    }
+
+    protected function tearDown(): void
+    {
+        if (isset($this->botUser->topic_id)) {
+            app(DeleteForumTopic::class)->execute($this->botUser);
+        }
+
+        parent::tearDown();
+    }
+
+    public function test_success_send_creates_message_record(): void
+    {
+        $typeMessage = 'outgoing';
+
+        $textMessage = 'hello';
+        $dtoParams = TelegramAnswerDtoMock::getDtoParams();
+
+        $dtoParams['result']['text'] = $textMessage;
+        $dto = TelegramAnswerDtoMock::getDto($dtoParams);
+
+        /** @var TelegramMethods&\Mockery\MockInterface $mockTelegramMethods */
+        $mockTelegramMethods = \Mockery::mock(TelegramMethods::class);
+        $mockTelegramMethods->shouldReceive('sendQueryTelegram')->andReturn($dto);
+
+        $params = TGTextMessageDto::from([
+            'methodQuery' => 'sendMessage',
+            'chat_id' => $this->botUser->chat_id,
+            'text' => $textMessage,
+        ]);
+
+        $job = new SendTelegramMessageJob(
+            $this->botUser->id,
+            $this->dto,
+            $params,
+            $typeMessage,
+            $mockTelegramMethods
+        );
+        $job->handle();
+
+        $this->assertDatabaseHas('messages', [
+            'bot_user_id' => $this->botUser->id,
+            'message_type' => $typeMessage,
+            'platform' => 'telegram',
+            'to_id' => $dto->message_id,
+        ]);
+    }
+}

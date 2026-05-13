@@ -1,0 +1,80 @@
+<?php
+
+namespace Tests\Feature\Jobs;
+
+use App\Models\BotUser;
+use App\Models\Message;
+use App\Modules\Telegram\Actions\DeleteForumTopic;
+use App\Modules\Telegram\Api\TelegramMethods;
+use App\Modules\Telegram\DTOs\TGTextMessageDto;
+use App\Modules\Telegram\Jobs\SendVkTelegramMessageJob;
+use App\Modules\Vk\DTOs\VkUpdateDto;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
+use Tests\Mocks\Tg\Answer\TelegramAnswerDtoMock;
+use Tests\Mocks\Vk\VkUpdateDtoMock;
+use Tests\TestCase;
+
+class SendVkTelegramMessageJobTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private VkUpdateDto $dto;
+
+    private ?BotUser $botUser;
+
+    public function setUp(): void
+    {
+        parent::setUp();
+
+        Message::truncate();
+        Queue::fake();
+
+        $this->dto = VkUpdateDtoMock::getDto();
+        $this->botUser = BotUser::getUserByChatId($this->dto->from_id, 'vk');
+        $this->botUser->topic_id = 123;
+        $this->botUser->save();
+    }
+
+    public function test_send_message_for_user(): void
+    {
+        try {
+            $typeMessage = 'incoming';
+            $textMessage = 'Тестовое сообщение';
+            $dtoParams = TelegramAnswerDtoMock::getDtoParams();
+
+            $dtoParams['result']['text'] = $textMessage;
+            $dto = TelegramAnswerDtoMock::getDto($dtoParams);
+
+            // Мокаем ответ от VK
+            /** @var TelegramMethods&\Mockery\MockInterface $mockTelegramMethods */
+            $mockTelegramMethods = \Mockery::mock(TelegramMethods::class);
+            $mockTelegramMethods->shouldReceive('sendQueryTelegram')->andReturn($dto);
+
+            // Готовим параметры VK-отправки
+            $queryParams = TGTextMessageDto::from([
+                'methodQuery' => 'sendMessage',
+                'chat_id' => $this->botUser->chat_id,
+                'text' => $textMessage,
+            ]);
+
+            $job = new SendVkTelegramMessageJob(
+                $this->botUser->id,
+                $this->dto,
+                $queryParams,
+                $mockTelegramMethods
+            );
+            $job->handle();
+
+            // Проверяем что исходящее сообщение записано в БД
+            $this->assertDatabaseHas('messages', [
+                'bot_user_id' => $this->botUser->id,
+                'message_type' => $typeMessage,
+            ]);
+        } finally {
+            if ($this->botUser->topic_id) {
+                app(DeleteForumTopic::class)->execute($this->botUser);
+            }
+        }
+    }
+}

@@ -1,0 +1,23 @@
+{
+    "api_external_messages_store": {
+        "type": "object",
+        "required": [
+            "source",
+            "external_id"
+        ],
+        "properties": {
+            "source": {
+                "type": "string",
+                "example": "live_chat"
+            },
+            "external_id": {
+                "type": "string",
+                "example": "u123"
+            },
+            "text": {
+                "type": "string",
+                "example": "Привет"
+            }
+        }
+    }
+}

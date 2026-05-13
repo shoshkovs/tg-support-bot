@@ -1,0 +1,28 @@
+{
+    "/api/files/{file_id}": {
+        "get": {
+            "summary": "Получение файла по Telegram File ID",
+            "operationId": "api_files_file_get",
+            "tags": [
+                "Files"
+            ],
+            "parameters": [
+                {
+                    "name": "file_id",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "string"
+                    },
+                    "description": "Telegram File ID",
+                    "example": "BQACAgIAAx0CAgAB"
+                }
+            ],
+            "responses": {
+                "200": {
+                    "description": "Файл получен!"
+                }
+            }
+        }
+    }
+}
