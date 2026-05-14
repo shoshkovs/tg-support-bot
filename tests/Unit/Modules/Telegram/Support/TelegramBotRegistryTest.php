@@ -44,6 +44,22 @@ class TelegramBotRegistryTest extends TestCase
         $this->assertNull(TelegramBotRegistry::findSlugByGroupId('-999'));
     }
 
+    public function test_unknown_slug_throws_when_bots_array_is_non_empty(): void
+    {
+        config([
+            'traffic_source.settings.telegram.bots' => [
+                'default' => [
+                    'token' => '111:AAA',
+                    'secret_key' => 's1',
+                    'group_id' => '-1001',
+                ],
+            ],
+        ]);
+
+        $this->expectException(\InvalidArgumentException::class);
+        TelegramBotRegistry::groupId('second');
+    }
+
     public function test_for_slug_falls_back_to_legacy_top_level_when_bots_empty(): void
     {
         config([

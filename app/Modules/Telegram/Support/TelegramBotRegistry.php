@@ -30,15 +30,26 @@ final class TelegramBotRegistry
             return $bots[$slug];
         }
 
-        if (isset($bots['default'])) {
-            return $bots['default'];
+        if ($bots === []) {
+            return [
+                'token' => (string) config('traffic_source.settings.telegram.token', ''),
+                'secret_key' => (string) config('traffic_source.settings.telegram.secret_key', ''),
+                'group_id' => (string) config('traffic_source.settings.telegram.group_id', ''),
+            ];
         }
 
-        return [
-            'token' => (string) config('traffic_source.settings.telegram.token', ''),
-            'secret_key' => (string) config('traffic_source.settings.telegram.secret_key', ''),
-            'group_id' => (string) config('traffic_source.settings.telegram.group_id', ''),
-        ];
+        if ($slug === 'default') {
+            return [
+                'token' => (string) config('traffic_source.settings.telegram.token', ''),
+                'secret_key' => (string) config('traffic_source.settings.telegram.secret_key', ''),
+                'group_id' => (string) config('traffic_source.settings.telegram.group_id', ''),
+            ];
+        }
+
+        throw new \InvalidArgumentException(
+            "Telegram bot slug \"{$slug}\" is not configured in traffic_source.settings.telegram.bots. " .
+            'Check TELEGRAM_BOT2_TOKEN / TELEGRAM_BOT2_GROUP_ID / TELEGRAM_BOT2_SLUG, docker env for the app container, and bot_users.telegram_bot_slug.'
+        );
     }
 
     public static function token(?string $slug): string
