@@ -23,7 +23,7 @@ class ParserMethods
     {
         try {
             $resultQuery = Http::withHeaders($queryHeading)
-                ->when(config('traffic_source.telegram.force_ipv4'), fn ($client) => $client->withOptions(['force_ip_resolve' => 'v4']))
+                ->when(config('traffic_source.settings.telegram.force_ipv4'), fn ($client) => $client->withOptions(['force_ip_resolve' => 'v4']))
                 ->post($urlQuery, $queryParams)
                 ->json();
 
@@ -59,7 +59,7 @@ class ParserMethods
             }
 
             $resultQuery = Http::withHeaders($queryHeading)
-                ->when(config('traffic_source.telegram.force_ipv4'), fn ($client) => $client->withOptions(['force_ip_resolve' => 'v4']))
+                ->when(config('traffic_source.settings.telegram.force_ipv4'), fn ($client) => $client->withOptions(['force_ip_resolve' => 'v4']))
                 ->withoutVerifying()
                 ->get($urlQuery)
                 ->json();
@@ -103,7 +103,7 @@ class ParserMethods
                 }
 
                 $resultQuery = Http::attach($attachType, $fileHandle, $safeName)
-                    ->when(config('traffic_source.telegram.force_ipv4'), fn ($client) => $client->withOptions(['force_ip_resolve' => 'v4']))
+                    ->when(config('traffic_source.settings.telegram.force_ipv4'), fn ($client) => $client->withOptions(['force_ip_resolve' => 'v4']))
                     ->post($urlQuery, $queryParams)
                     ->json();
 
@@ -143,7 +143,7 @@ class ParserMethods
                     fopen($tempPath, 'rb'),
                     $safeName
                 )
-                    ->when(config('traffic_source.telegram.force_ipv4'), fn ($client) => $client->withOptions(['force_ip_resolve' => 'v4']))
+                    ->when(config('traffic_source.settings.telegram.force_ipv4'), fn ($client) => $client->withOptions(['force_ip_resolve' => 'v4']))
                     ->post($urlQuery, $queryParams)
                     ->json();
             }

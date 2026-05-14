@@ -33,6 +33,7 @@ class BotUser extends Model
         'chat_id',
         'topic_id',
         'platform',
+        'telegram_bot_slug',
         'is_banned',
         'banned_at',
         'is_closed',
@@ -138,13 +139,14 @@ class BotUser extends Model
                     ->with('externalUser')
                     ->first();
             } elseif ($update->typeSource === 'private') {
+                $slug = $update->telegramBotSlug;
                 $botUser = self::firstOrCreate(
                     [
                         'chat_id' => $update->chatId,
-                    ],
-                    [
                         'platform' => 'telegram',
-                    ]
+                        'telegram_bot_slug' => $slug,
+                    ],
+                    []
                 );
             }
 
@@ -181,14 +183,19 @@ class BotUser extends Model
      *
      * @return BotUser|null
      */
-    public static function getUserByChatId(string|int $chatId, string $platform): ?BotUser
+    public static function getUserByChatId(string|int $chatId, string $platform, string $telegramBotSlug = 'default'): ?BotUser
     {
         try {
-            return self::firstOrCreate([
-                'chat_id' => $chatId,
-            ], [
-                'platform' => $platform,
-            ]);
+            $slug = $platform === 'telegram' ? $telegramBotSlug : 'default';
+
+            return self::firstOrCreate(
+                [
+                    'chat_id' => $chatId,
+                    'platform' => $platform,
+                    'telegram_bot_slug' => $slug,
+                ],
+                []
+            );
         } catch (\Throwable $e) {
             return null;
         }

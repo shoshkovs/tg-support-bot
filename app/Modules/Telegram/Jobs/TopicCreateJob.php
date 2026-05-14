@@ -7,6 +7,7 @@ use App\Models\ExternalUser;
 use App\Modules\Telegram\Actions\GetChat;
 use App\Modules\Telegram\Actions\SendContactMessage;
 use App\Modules\Telegram\Api\TelegramMethods;
+use App\Modules\Telegram\Support\TelegramBotRegistry;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -28,17 +29,11 @@ class TopicCreateJob implements ShouldQueue
 
     private BotUser $botUser;
 
-    private TelegramMethods $telegramMethods;
-
     private int $botUserId;
 
-    public function __construct(
-        int $botUserId,
-        TelegramMethods $telegramMethods = null,
-    ) {
+    public function __construct(int $botUserId)
+    {
         $this->botUserId = $botUserId;
-
-        $this->telegramMethods = $telegramMethods ?? new TelegramMethods();
     }
 
     /**
@@ -50,12 +45,13 @@ class TopicCreateJob implements ShouldQueue
             $this->botUser = BotUser::find($this->botUserId);
 
             $topicName = $this->generateNameTopic($this->botUser);
+            $botToken = TelegramBotRegistry::token($this->botUser->telegram_bot_slug ?? 'default');
 
-            $response = $this->telegramMethods->sendQueryTelegram('createForumTopic', [
+            $response = TelegramMethods::sendQueryTelegram('createForumTopic', [
                 'chat_id' => config('traffic_source.settings.telegram.group_id'),
                 'name' => $topicName,
                 'icon_custom_emoji_id' => __('icons.incoming'),
-            ]);
+            ], $botToken);
 
             if ($response->ok === true) {
                 $this->botUser->topic_id = $response->message_thread_id;
@@ -104,7 +100,15 @@ class TopicCreateJob implements ShouldQueue
                 $templateTopicName = str_replace('{platform}', $botUser->platform, $templateTopicName);
             }
 
-            $nameParts = $this->getPartsGenerateName($botUser->chat_id);
+            if (preg_match('/\{telegram_bot_label\}/', $templateTopicName)) {
+                $templateTopicName = str_replace(
+                    '{telegram_bot_label}',
+                    TelegramBotRegistry::label($botUser->telegram_bot_slug ?? 'default'),
+                    $templateTopicName
+                );
+            }
+
+            $nameParts = $this->getPartsGenerateName($botUser->chat_id, TelegramBotRegistry::token($botUser->telegram_bot_slug ?? 'default'));
             if (empty($nameParts)) {
                 throw new \Exception('Name parts not found');
             }
@@ -127,23 +131,29 @@ class TopicCreateJob implements ShouldQueue
 
             return $topicName;
         } catch (\Throwable $e) {
-            return '#' . $botUser->chat_id . ' (' . $botUser->platform . ')';
+            $fallback = '#' . $botUser->chat_id . ' (' . $botUser->platform . ')';
+            if ($botUser->platform === 'telegram') {
+                return '【' . TelegramBotRegistry::label($botUser->telegram_bot_slug ?? 'default') . '】 ' . $fallback;
+            }
+
+            return $fallback;
         }
     }
 
     /**
      * Get parts for chat name generation.
      *
-     * @param int $chatId
+     * @param int         $chatId
+     * @param string|null $botToken
      *
      * @return array
      *
      * @throws \Exception
      */
-    protected function getPartsGenerateName(int $chatId): array
+    protected function getPartsGenerateName(int $chatId, ?string $botToken = null): array
     {
         try {
-            $chatDataQuery = app(GetChat::class)->execute($chatId);
+            $chatDataQuery = app(GetChat::class)->execute($chatId, $botToken);
             if (!$chatDataQuery->ok) {
                 throw new \Exception('ChatData not found');
             }

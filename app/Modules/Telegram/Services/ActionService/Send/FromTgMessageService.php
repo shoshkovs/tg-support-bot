@@ -5,6 +5,7 @@ namespace App\Modules\Telegram\Services\ActionService\Send;
 use App\Models\BotUser;
 use App\Modules\Telegram\DTOs\TelegramUpdateDto;
 use App\Modules\Telegram\DTOs\TGTextMessageDto;
+use App\Modules\Telegram\Support\TelegramBotRegistry;
 use phpDocumentor\Reflection\Exception;
 
 /**
@@ -46,6 +47,8 @@ abstract class FromTgMessageService extends TemplateMessageService
 
         $queryParams['methodQuery'] = 'sendMessage';
         $queryParams['typeSource'] = $update->typeSource;
+        $queryParams['token'] = TelegramBotRegistry::token($update->telegramBotSlug);
+
         $this->messageParamsDTO = TGTextMessageDto::from($queryParams);
     }
 

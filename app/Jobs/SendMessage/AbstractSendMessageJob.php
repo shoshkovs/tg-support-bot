@@ -15,6 +15,7 @@ use App\Modules\Telegram\Jobs\SendTelegramMessageJob;
 use App\Modules\Telegram\Jobs\SendTelegramSimpleQueryJob;
 use App\Modules\Telegram\Jobs\SendVkTelegramMessageJob;
 use App\Modules\Telegram\Jobs\TopicCreateJob;
+use App\Modules\Telegram\Support\TelegramBotRegistry;
 use App\Modules\Vk\DTOs\VkUpdateDto;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -72,6 +73,7 @@ abstract class AbstractSendMessageJob implements ShouldQueue
             'chat_id' => config('traffic_source.settings.telegram.group_id'),
             'message_thread_id' => $botUser->topic_id,
             'icon_custom_emoji_id' => __('icons.' . $typeMessage),
+            'token' => TelegramBotRegistry::token($botUser->telegram_bot_slug ?? 'default'),
         ]));
     }
 

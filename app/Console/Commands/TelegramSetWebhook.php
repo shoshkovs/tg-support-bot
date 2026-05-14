@@ -3,37 +3,48 @@
 namespace App\Console\Commands;
 
 use App\Modules\Telegram\Api\TelegramMethods;
+use App\Modules\Telegram\Support\TelegramBotRegistry;
 use Illuminate\Console\Command;
 
 class TelegramSetWebhook extends Command
 {
     protected $signature = 'telegram:set-webhook';
 
-    protected $description = 'Set Telegram Webhook for bot';
+    protected $description = 'Set Telegram webhook URL(s) for all configured bots';
 
     /**
      * @return int
      */
     public function handle(): int
     {
-        $appUrl = config('app.url');
-        $url = $appUrl . '/api/telegram/bot';
-        $secret = config('traffic_source.settings.telegram.secret_key');
+        foreach (TelegramBotRegistry::slugs() as $slug) {
+            $cfg = TelegramBotRegistry::forSlug($slug);
+            if ($cfg['token'] === '') {
+                $this->warn("Skip slug \"{$slug}\": empty token.");
 
-        $queryParams = [
-            'url' => $url,
-            'max_connections' => 40,
-            'drop_pending_updates' => true,
-            'secret_token' => $secret,
-        ];
+                continue;
+            }
 
-        $result = TelegramMethods::sendQueryTelegram('setWebhook', $queryParams);
+            $path = $slug === 'default'
+                ? '/api/telegram/bot'
+                : '/api/telegram/bots/' . $slug . '/bot';
+            $url = config('app.url') . $path;
 
-        if (isset($result->rawData)) {
-            $this->info('Webhook set:');
-            $this->line(json_encode($result->rawData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-        } else {
-            $this->error('Error setting webhook');
+            $queryParams = [
+                'url' => $url,
+                'max_connections' => 40,
+                'drop_pending_updates' => true,
+                'secret_token' => $cfg['secret_key'],
+            ];
+
+            $result = TelegramMethods::sendQueryTelegram('setWebhook', $queryParams, $cfg['token']);
+
+            $this->info("Webhook slug \"{$slug}\" -> {$url}");
+            if (isset($result->rawData)) {
+                $this->line(json_encode($result->rawData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+            } else {
+                $this->error('No response data');
+            }
         }
 
         return Command::SUCCESS;

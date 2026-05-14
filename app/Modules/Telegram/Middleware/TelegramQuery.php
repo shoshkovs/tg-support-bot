@@ -2,6 +2,7 @@
 
 namespace App\Modules\Telegram\Middleware;
 
+use App\Modules\Telegram\Support\TelegramBotRegistry;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -23,7 +24,10 @@ class TelegramQuery
                 throw new Exception('Secret-Token is invalid!');
             }
 
-            if ($receivedToken !== config('traffic_source.settings.telegram.secret_key')) {
+            $slug = (string) $request->route('telegram_bot_slug', 'default');
+            $expectedSecret = TelegramBotRegistry::secret($slug);
+
+            if ($receivedToken !== $expectedSecret) {
                 throw new Exception('Secret-Token is invalid!');
             }
 

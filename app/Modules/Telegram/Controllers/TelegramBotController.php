@@ -39,7 +39,7 @@ class TelegramBotController
         $this->dataHook = $dataHook;
 
         if ($this->dataHook->typeSource === 'private') {
-            $this->botUser = (new BotUser())->getUserByChatId($this->dataHook->chatId, 'telegram');
+            $this->botUser = BotUser::getUserByChatId($this->dataHook->chatId, 'telegram', $this->dataHook->telegramBotSlug);
             $this->platform = 'telegram';
         } else {
             $this->botUser = (new BotUser())->getByTopicId($this->dataHook->messageThreadId);
@@ -95,7 +95,7 @@ class TelegramBotController
             ($this->dataHook->chatId ?? '') . ':' .
             ($this->dataHook->messageId ?? '') . ':' .
             ($this->dataHook->text ?? '') . ':' .
-            ($this->dataHook->typeQuery ?? '')
+            $this->dataHook->typeQuery
         );
 
         if (!\Illuminate\Support\Facades\Cache::add($lockKey, true, 30)) {

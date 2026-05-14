@@ -5,6 +5,7 @@ namespace App\Modules\Telegram\Actions;
 use App\Models\BotUser;
 use App\Modules\Telegram\DTOs\TGTextMessageDto;
 use App\Modules\Telegram\Jobs\SendTelegramSimpleQueryJob;
+use App\Modules\Telegram\Support\TelegramBotRegistry;
 
 class SendContactMessage
 {
@@ -26,8 +27,13 @@ class SendContactMessage
      */
     public function getQueryParams(BotUser $botUser): TGTextMessageDto
     {
+        $token = $botUser->platform === 'telegram'
+            ? TelegramBotRegistry::token($botUser->telegram_bot_slug ?? 'default')
+            : null;
+
         return TGTextMessageDto::from([
             'methodQuery' => 'sendMessage',
+            'token' => $token,
             'chat_id' => config('traffic_source.settings.telegram.group_id'),
             'message_thread_id' => $botUser->topic_id,
             'text' => $this->buildText($botUser),
@@ -53,8 +59,11 @@ class SendContactMessage
             return $text;
         }
 
+        $text .= 'Бот: ' . TelegramBotRegistry::label($botUser->telegram_bot_slug ?? 'default') . "\n";
+
         try {
-            $chat = $this->getChat->execute($botUser->chat_id);
+            $token = TelegramBotRegistry::token($botUser->telegram_bot_slug ?? 'default');
+            $chat = $this->getChat->execute($botUser->chat_id, $token);
             $username = $chat->rawData['result']['username'] ?? null;
 
             if ($username) {

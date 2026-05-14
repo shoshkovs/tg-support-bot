@@ -7,6 +7,7 @@ use App\Modules\Telegram\Actions\ConversionMessageText;
 use App\Modules\Telegram\DTOs\TelegramUpdateDto;
 use App\Modules\Telegram\Jobs\SendTelegramMessageJob;
 use App\Modules\Telegram\Services\ActionService\Send\FromTgMessageService;
+use App\Modules\Telegram\Support\TelegramBotRegistry;
 use App\Services\Button\ButtonParser;
 use App\Services\Button\KeyboardBuilder;
 use Illuminate\Support\Facades\Log;
@@ -206,6 +207,13 @@ class TgMessageService extends FromTgMessageService
     {
         $text = $this->update->text;
         $keyboard = null;
+
+        if ($this->update->typeSource === 'private') {
+            $label = $this->update->telegramBotLabel !== ''
+                ? $this->update->telegramBotLabel
+                : TelegramBotRegistry::label($this->update->telegramBotSlug);
+            $text = '【' . $label . "】\n" . $text;
+        }
 
         if ($this->update->typeSource === 'supergroup') {
             $buttonParser = new ButtonParser();
