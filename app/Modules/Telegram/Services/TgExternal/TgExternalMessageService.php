@@ -105,6 +105,13 @@ class TgExternalMessageService extends FromTgMessageService
 
             $webhookUrl = $this->botUser->externalUser->externalSource->webhook_url;
             $messageData = WebhookMessageDto::fromArray($resultData);
+
+            $lockKey = 'tg_external_outgoing:' . $this->botUser->id . ':' . md5(($messageData->message->text ?? '') . ':' . ($messageData->message->from_id ?? ''));
+
+            if (!\Illuminate\Support\Facades\Cache::add($lockKey, true, 10)) {
+                return;
+            }
+
             $saveMessageData = $this->saveMessage($messageData);
             if (!empty($webhookUrl)) {
                 SendWebhookMessage::dispatch($webhookUrl, [

@@ -91,6 +91,17 @@ class TelegramBotController
      */
     public function bot_query(): void
     {
+        $lockKey = 'tg_update_lock:' . md5(
+            ($this->dataHook->chatId ?? '') . ':' .
+            ($this->dataHook->messageId ?? '') . ':' .
+            ($this->dataHook->text ?? '') . ':' .
+            ($this->dataHook->typeQuery ?? '')
+        );
+
+        if (!\Illuminate\Support\Facades\Cache::add($lockKey, true, 30)) {
+            return;
+        }
+
         $this->checkBotQuery();
         if ($this->dataHook->editedTopicStatus && $this->dataHook->typeSource === 'supergroup') {
             SendTelegramSimpleQueryJob::dispatch(TGTextMessageDto::from([
