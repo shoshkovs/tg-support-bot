@@ -61,6 +61,23 @@ final class TelegramBotRegistry
     }
 
     /**
+     * Найти slug бота по секрету вебхука (X-Telegram-Bot-Api-Secret-Token).
+     * Нужен для URL без сегмента slug: POST /api/telegram/bot — иначе всегда считался default.
+     *
+     * @return string|null slug или null, если секрет не совпал ни с одним ботом
+     */
+    public static function findSlugBySecretKey(string $secret): ?string
+    {
+        foreach (self::slugs() as $slug) {
+            if (hash_equals(self::secret($slug), $secret)) {
+                return $slug;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Slugs для вебхуков: из `bots[]` или один `default`, если задан legacy `TELEGRAM_TOKEN`.
      *
      * @return list<string>

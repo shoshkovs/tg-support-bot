@@ -9,6 +9,7 @@ use App\Modules\Telegram\Api\TelegramMethods;
 use App\Modules\Telegram\DTOs\TelegramAnswerDto;
 use App\Modules\Telegram\DTOs\TelegramUpdateDto;
 use App\Modules\Telegram\DTOs\TGTextMessageDto;
+use App\Modules\Telegram\Support\TelegramBotRegistry;
 use Illuminate\Support\Facades\Log;
 
 class SendTelegramMessageJob extends AbstractSendMessageJob
@@ -27,21 +28,16 @@ class SendTelegramMessageJob extends AbstractSendMessageJob
 
     public string $typeMessage;
 
-    private TelegramMethods $telegramMethods;
-
     public function __construct(
         int $botUserId,
         TelegramUpdateDto $updateDto,
         TGTextMessageDto $queryParams,
         string $typeMessage,
-        ?TelegramMethods $telegramMethods = null,
     ) {
         $this->botUserId = $botUserId;
         $this->updateDto = $updateDto;
         $this->queryParams = $queryParams;
         $this->typeMessage = $typeMessage;
-
-        $this->telegramMethods = $telegramMethods ?? new TelegramMethods();
     }
 
     public function handle(): void
@@ -53,23 +49,27 @@ class SendTelegramMessageJob extends AbstractSendMessageJob
             $params = $this->queryParams->toArray();
 
             if ($this->typeMessage === 'incoming') {
+                $supportBotToken = TelegramBotRegistry::token($botUser->telegram_bot_slug ?? 'default');
+
                 if ($botUser->topic_id) {
-                    $response = $this->telegramMethods->sendQueryTelegram(
+                    $response = TelegramMethods::sendQueryTelegram(
                         'editForumTopic',
                         [
                             'chat_id' => config('traffic_source.settings.telegram.group_id'),
                             'message_thread_id' => $botUser->topic_id,
                             'icon_custom_emoji_id' => __('icons.incoming'),
-                        ]
+                        ],
+                        $supportBotToken
                     );
 
                     if ($botUser->isClosed()) {
-                        $response = $this->telegramMethods->sendQueryTelegram(
+                        $response = TelegramMethods::sendQueryTelegram(
                             'reopenForumTopic',
                             [
                                 'chat_id' => config('traffic_source.settings.telegram.group_id'),
                                 'message_thread_id' => $botUser->topic_id,
-                            ]
+                            ],
+                            $supportBotToken
                         );
                     }
 
@@ -100,7 +100,7 @@ class SendTelegramMessageJob extends AbstractSendMessageJob
                 }
             }
 
-            $response = $this->telegramMethods->sendQueryTelegram(
+            $response = TelegramMethods::sendQueryTelegram(
                 $methodQuery,
                 $params,
                 $this->queryParams->token

@@ -86,7 +86,8 @@ class TelegramUpdateDto extends Data
                 $aiTechMessage = false;
             }
 
-            $telegramBotSlug = (string) ($request->route('telegram_bot_slug', 'default'));
+            $telegramBotSlug = (string) ($request->attributes->get('telegram_resolved_bot_slug')
+                ?? $request->route('telegram_bot_slug', 'default'));
             $telegramBotLabel = TelegramBotRegistry::label($telegramBotSlug);
 
             return new self(
