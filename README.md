@@ -1,4 +1,4 @@
-# TG Support Bot — Мультиканальная платформа технической поддержки
+# TG Support Bot 1 — Мультиканальная платформа технической поддержки
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![PHP](https://img.shields.io/badge/PHP-8.2+-777BB4?logo=php&logoColor=white)](https://www.php.net/)
