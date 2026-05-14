@@ -6,7 +6,6 @@ use App\Modules\Telegram\Support\TelegramBotRegistry;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Mockery\Exception;
 use Symfony\Component\HttpFoundation\Response;
 
 class TelegramQuery
@@ -21,14 +20,14 @@ class TelegramQuery
         try {
             $receivedToken = $request->header('X-Telegram-Bot-Api-Secret-Token');
             if (empty($receivedToken)) {
-                throw new Exception('Secret-Token is invalid!');
+                throw new \InvalidArgumentException('Secret-Token is invalid!');
             }
 
             // AI-бот: отдельный контроллер, секрет как у основного support-бота (без multi-bot slug в URL).
             if ($request->is('api/telegram/ai/bot')) {
                 $expectedSecret = TelegramBotRegistry::secret('default');
                 if (! hash_equals($expectedSecret, $receivedToken)) {
-                    throw new Exception('Secret-Token is invalid!');
+                    throw new \InvalidArgumentException('Secret-Token is invalid!');
                 }
 
                 $this->sendRequestInLoki($request);
@@ -38,12 +37,12 @@ class TelegramQuery
 
             $resolvedSlug = TelegramBotRegistry::findSlugBySecretKey($receivedToken);
             if ($resolvedSlug === null) {
-                throw new Exception('Secret-Token is invalid!');
+                throw new \InvalidArgumentException('Secret-Token is invalid!');
             }
 
             $routeSlug = $request->route('telegram_bot_slug');
             if ($routeSlug !== null && $routeSlug !== '' && $routeSlug !== $resolvedSlug) {
-                throw new Exception('Secret-Token is invalid!');
+                throw new \InvalidArgumentException('Secret-Token is invalid!');
             }
 
             $request->attributes->set('telegram_resolved_bot_slug', $resolvedSlug);
