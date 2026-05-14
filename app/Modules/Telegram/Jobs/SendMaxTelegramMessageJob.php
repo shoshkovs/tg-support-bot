@@ -9,6 +9,7 @@ use App\Modules\Max\DTOs\MaxUpdateDto;
 use App\Modules\Telegram\Api\TelegramMethods;
 use App\Modules\Telegram\DTOs\TelegramAnswerDto;
 use App\Modules\Telegram\DTOs\TGTextMessageDto;
+use App\Modules\Telegram\Support\TelegramBotRegistry;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -51,6 +52,10 @@ class SendMaxTelegramMessageJob extends AbstractSendMessageJob
         try {
             $botUser = BotUser::find($this->botUserId);
 
+            $slug = $botUser->telegram_bot_slug ?? 'default';
+            $supportGroupId = TelegramBotRegistry::groupId($slug);
+            $supportToken = TelegramBotRegistry::token($slug);
+
             $methodQuery = $this->queryParams->methodQuery;
             $params = $this->queryParams->toArray();
 
@@ -58,10 +63,11 @@ class SendMaxTelegramMessageJob extends AbstractSendMessageJob
                 $response = $this->telegramMethods->sendQueryTelegram(
                     'editForumTopic',
                     [
-                        'chat_id' => config('traffic_source.settings.telegram.group_id'),
+                        'chat_id' => $supportGroupId,
                         'message_thread_id' => $botUser->topic_id,
                         'icon_custom_emoji_id' => __('icons.incoming'),
-                    ]
+                    ],
+                    $supportToken
                 );
 
                 if ($response->isTopicNotFound || $response->type_error === 'TOPIC_NOT_MODIFIED') {
@@ -76,9 +82,10 @@ class SendMaxTelegramMessageJob extends AbstractSendMessageJob
                         $this->telegramMethods->sendQueryTelegram(
                             'reopenForumTopic',
                             [
-                                'chat_id' => config('traffic_source.settings.telegram.group_id'),
+                                'chat_id' => $supportGroupId,
                                 'message_thread_id' => $botUser->topic_id,
-                            ]
+                            ],
+                            $supportToken
                         );
                         $botUser->update(['is_closed' => false, 'closed_at' => null]);
                     }

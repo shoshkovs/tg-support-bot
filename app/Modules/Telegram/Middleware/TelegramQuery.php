@@ -23,31 +23,19 @@ class TelegramQuery
                 throw new \InvalidArgumentException('Secret-Token is invalid!');
             }
 
-            // AI-бот: отдельный контроллер, секрет как у основного support-бота (без multi-bot slug в URL).
             if ($request->is('api/telegram/ai/bot')) {
-                $expectedSecret = TelegramBotRegistry::secret('default');
-                if (! hash_equals($expectedSecret, $receivedToken)) {
-                    throw new \InvalidArgumentException('Secret-Token is invalid!');
-                }
-
-                $this->sendRequestInLoki($request);
-
-                return $next($request);
+                $slug = 'default';
+            } else {
+                $slug = (string) $request->route('telegram_bot_slug', 'default');
             }
 
-            $resolvedSlug = TelegramBotRegistry::findSlugBySecretKey($receivedToken);
-            if ($resolvedSlug === null) {
+            $expectedSecret = TelegramBotRegistry::secret($slug);
+            if (! hash_equals($expectedSecret, $receivedToken)) {
                 throw new \InvalidArgumentException('Secret-Token is invalid!');
             }
-
-            $routeSlug = $request->route('telegram_bot_slug');
-            if ($routeSlug !== null && $routeSlug !== '' && $routeSlug !== $resolvedSlug) {
-                throw new \InvalidArgumentException('Secret-Token is invalid!');
-            }
-
-            $request->attributes->set('telegram_resolved_bot_slug', $resolvedSlug);
 
             $this->sendRequestInLoki($request);
+
             return $next($request);
         } catch (\Throwable $e) {
             return response()->json([

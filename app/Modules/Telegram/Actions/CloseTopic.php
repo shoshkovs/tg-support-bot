@@ -5,6 +5,7 @@ namespace App\Modules\Telegram\Actions;
 use App\Models\BotUser;
 use App\Modules\Telegram\DTOs\TGTextMessageDto;
 use App\Modules\Telegram\Jobs\SendTelegramSimpleQueryJob;
+use App\Modules\Telegram\Support\TelegramBotRegistry;
 use App\Modules\Vk\DTOs\VkTextMessageDto;
 use App\Modules\Vk\Jobs\SendVkSimpleMessageJob;
 
@@ -21,7 +22,9 @@ class CloseTopic
             return;
         }
 
-        $groupId = config('traffic_source.settings.telegram.group_id');
+        $slug = $botUser->telegram_bot_slug ?? 'default';
+        $groupId = TelegramBotRegistry::groupId($slug);
+        $token = TelegramBotRegistry::token($slug);
 
         switch ($botUser->platform) {
             case 'telegram':
@@ -35,6 +38,7 @@ class CloseTopic
 
         SendTelegramSimpleQueryJob::dispatch(TGTextMessageDto::from([
             'methodQuery' => 'editForumTopic',
+            'token' => $token,
             'chat_id' => $groupId,
             'message_thread_id' => $botUser->topic_id,
             'icon_custom_emoji_id' => __('icons.outgoing'),
@@ -42,6 +46,7 @@ class CloseTopic
 
         SendTelegramSimpleQueryJob::dispatch(TGTextMessageDto::from([
             'methodQuery' => 'closeForumTopic',
+            'token' => $token,
             'chat_id' => $groupId,
             'message_thread_id' => $botUser->topic_id,
         ]));

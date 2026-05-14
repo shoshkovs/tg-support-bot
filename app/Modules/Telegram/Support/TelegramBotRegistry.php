@@ -3,27 +3,23 @@
 namespace App\Modules\Telegram\Support;
 
 /**
- * Конфигурация нескольких Telegram-ботов (одна группа поддержки, разные токены/секреты).
+ * Несколько Telegram-ботов: у каждого slug свои token, secret_key и своя группа поддержки (group_id).
  */
 final class TelegramBotRegistry
 {
     /**
-     * Список ботов: slug => [token, secret_key, label].
-     *
-     * @return array<string, array{token: string, secret_key: string, label: string}>
+     * @return array<string, array{token: string, secret_key: string, group_id: string}>
      */
     public static function bots(): array
     {
-        /** @var array<string, array{token: string, secret_key: string, label: string}> $bots */
+        /** @var array<string, array{token: string, secret_key: string, group_id: string}> $bots */
         $bots = config('traffic_source.settings.telegram.bots', []);
 
         return $bots;
     }
 
     /**
-     * Конфиг одного бота по slug (fallback на default).
-     *
-     * @return array{token: string, secret_key: string, label: string}
+     * @return array{token: string, secret_key: string, group_id: string}
      */
     public static function forSlug(?string $slug): array
     {
@@ -41,7 +37,7 @@ final class TelegramBotRegistry
         return [
             'token' => (string) config('traffic_source.settings.telegram.token', ''),
             'secret_key' => (string) config('traffic_source.settings.telegram.secret_key', ''),
-            'label' => (string) config('traffic_source.settings.telegram.bot_label', 'Бот'),
+            'group_id' => (string) config('traffic_source.settings.telegram.group_id', ''),
         ];
     }
 
@@ -55,21 +51,29 @@ final class TelegramBotRegistry
         return self::forSlug($slug)['secret_key'];
     }
 
-    public static function label(?string $slug): string
+    /**
+     * ID супергруппы (форум), куда этот бот пишет треды поддержки.
+     *
+     * @return int|string
+     */
+    public static function groupId(?string $slug): int|string
     {
-        return self::forSlug($slug)['label'];
+        $g = self::forSlug($slug)['group_id'];
+
+        return is_numeric($g) ? (int) $g : $g;
     }
 
     /**
-     * Найти slug бота по секрету вебхука (X-Telegram-Bot-Api-Secret-Token).
-     * Нужен для URL без сегмента slug: POST /api/telegram/bot — иначе всегда считался default.
-     *
-     * @return string|null slug или null, если секрет не совпал ни с одним ботом
+     * Slug бота по ID группы (для апдейтов из супергруппы: message.chat.id).
      */
-    public static function findSlugBySecretKey(string $secret): ?string
+    public static function findSlugByGroupId(string $groupId): ?string
     {
+        if ($groupId === '') {
+            return null;
+        }
+
         foreach (self::slugs() as $slug) {
-            if (hash_equals(self::secret($slug), $secret)) {
+            if ((string) self::groupId($slug) === $groupId) {
                 return $slug;
             }
         }
@@ -78,8 +82,6 @@ final class TelegramBotRegistry
     }
 
     /**
-     * Slugs для вебхуков: из `bots[]` или один `default`, если задан legacy `TELEGRAM_TOKEN`.
-     *
      * @return list<string>
      */
     public static function slugs(): array

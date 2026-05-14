@@ -4,6 +4,7 @@ namespace Tests\Unit\Modules\Telegram\Actions;
 
 use App\Models\BotUser;
 use App\Modules\Telegram\Actions\DeleteForumTopic;
+use App\Modules\Telegram\Support\TelegramBotRegistry;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -39,7 +40,7 @@ class DeleteForumTopicTest extends TestCase
         $request = $sentRequests[0][0];
 
         $this->assertStringContainsString('deleteForumTopic', $request->url());
-        $this->assertEquals(config('traffic_source.settings.telegram.group_id'), $request['chat_id']);
+        $this->assertEquals(TelegramBotRegistry::groupId('default'), $request['chat_id']);
         $this->assertEquals($botUser->topic_id, $request['message_thread_id']);
     }
 }

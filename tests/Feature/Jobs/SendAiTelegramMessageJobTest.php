@@ -41,7 +41,7 @@ class SendAiTelegramMessageJobTest extends TestCase
         Storage::disk('prompts')->put('basic.txt', 'System prompt');
 
         $this->groupId = time();
-        config(['traffic_source.settings.telegram.group_id' => $this->groupId]);
+        $this->setTelegramSupportGroupIdForTests($this->groupId);
 
         $this->telegramAiToken = 'test_ai_token';
         config(['traffic_source.settings.telegram_ai.token' => $this->telegramAiToken]);

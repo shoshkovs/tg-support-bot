@@ -10,10 +10,9 @@ return [
             // backward compat (used when bots[] is empty)
             'token' => env('TELEGRAM_TOKEN', ''),
             'secret_key' => env('TELEGRAM_SECRET_KEY', ''),
-            'bot_label' => env('TELEGRAM_BOT_LABEL', 'Бот'),
             /**
-             * Несколько ботов: slug => token, secret_key (вебхук), label (подпись в группе).
-             * Вебхук: POST /api/telegram/bots/{slug}/bot и legacy POST /api/telegram/bot (slug=default).
+             * Несколько ботов: у каждого свой token, secret (вебхук), своя группа.
+             * Вебхук: POST /api/telegram/bots/{slug}/bot и POST /api/telegram/bot (slug=default).
              */
             'bots' => (static function (): array {
                 $bots = [];
@@ -22,7 +21,7 @@ return [
                     $bots['default'] = [
                         'token' => $tokenPrimary,
                         'secret_key' => (string) env('TELEGRAM_SECRET_KEY', ''),
-                        'label' => (string) env('TELEGRAM_BOT_LABEL', 'Основной бот'),
+                        'group_id' => (string) env('TELEGRAM_GROUP_ID', ''),
                     ];
                 }
                 $tokenSecond = env('TELEGRAM_BOT2_TOKEN');
@@ -35,7 +34,7 @@ return [
                     $bots[$slug] = [
                         'token' => $tokenSecond,
                         'secret_key' => (string) env('TELEGRAM_BOT2_SECRET_KEY', ''),
-                        'label' => (string) env('TELEGRAM_BOT2_LABEL', 'Второй бот'),
+                        'group_id' => (string) env('TELEGRAM_BOT2_GROUP_ID', ''),
                     ];
                 }
 

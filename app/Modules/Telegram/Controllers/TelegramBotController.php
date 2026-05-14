@@ -14,6 +14,7 @@ use App\Modules\Telegram\Actions\SendStartMessage;
 use App\Modules\Telegram\DTOs\TelegramUpdateDto;
 use App\Modules\Telegram\DTOs\TGTextMessageDto;
 use App\Modules\Telegram\Jobs\SendTelegramSimpleQueryJob;
+use App\Modules\Telegram\Support\TelegramBotRegistry;
 use App\Modules\Telegram\Services\Tg\TgEditMessageService;
 use App\Modules\Telegram\Services\TgExternal\TgExternalEditService;
 use App\Modules\Telegram\Services\TgExternal\TgExternalMessageService;
@@ -42,7 +43,8 @@ class TelegramBotController
             $this->botUser = BotUser::getUserByChatId($this->dataHook->chatId, 'telegram', $this->dataHook->telegramBotSlug);
             $this->platform = 'telegram';
         } else {
-            $this->botUser = (new BotUser())->getByTopicId($this->dataHook->messageThreadId);
+            $slug = TelegramBotRegistry::findSlugByGroupId((string) ($this->dataHook->chatId ?? '')) ?? 'default';
+            $this->botUser = BotUser::getByTopicId($this->dataHook->messageThreadId, $slug);
             $this->platform = $this->botUser->platform ?? null;
         }
 
@@ -106,7 +108,8 @@ class TelegramBotController
         if ($this->dataHook->editedTopicStatus && $this->dataHook->typeSource === 'supergroup') {
             SendTelegramSimpleQueryJob::dispatch(TGTextMessageDto::from([
                 'methodQuery' => 'deleteMessage',
-                'chat_id' => config('traffic_source.settings.telegram.group_id'),
+                'token' => TelegramBotRegistry::token($this->botUser->telegram_bot_slug ?? 'default'),
+                'chat_id' => TelegramBotRegistry::groupId($this->botUser->telegram_bot_slug ?? 'default'),
                 'message_id' => $this->dataHook->messageId,
             ]));
         } elseif (!$this->dataHook->isBot) {

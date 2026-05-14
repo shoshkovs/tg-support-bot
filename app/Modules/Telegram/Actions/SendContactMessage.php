@@ -34,7 +34,7 @@ class SendContactMessage
         return TGTextMessageDto::from([
             'methodQuery' => 'sendMessage',
             'token' => $token,
-            'chat_id' => config('traffic_source.settings.telegram.group_id'),
+            'chat_id' => TelegramBotRegistry::groupId($botUser->telegram_bot_slug ?? 'default'),
             'message_thread_id' => $botUser->topic_id,
             'text' => $this->buildText($botUser),
             'parse_mode' => 'html',
@@ -58,8 +58,6 @@ class SendContactMessage
         if ($botUser->platform !== 'telegram') {
             return $text;
         }
-
-        $text .= 'Бот: ' . TelegramBotRegistry::label($botUser->telegram_bot_slug ?? 'default') . "\n";
 
         try {
             $token = TelegramBotRegistry::token($botUser->telegram_bot_slug ?? 'default');

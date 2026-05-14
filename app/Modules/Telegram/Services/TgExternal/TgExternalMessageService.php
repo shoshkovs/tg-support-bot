@@ -12,6 +12,7 @@ use App\Modules\Telegram\DTOs\TelegramUpdateDto;
 use App\Modules\Telegram\DTOs\TGTextMessageDto;
 use App\Modules\Telegram\Jobs\SendTelegramSimpleQueryJob;
 use App\Modules\Telegram\Services\ActionService\Send\FromTgMessageService;
+use App\Modules\Telegram\Support\TelegramBotRegistry;
 use App\Services\Button\ButtonParser;
 use Illuminate\Support\Facades\Log;
 
@@ -123,7 +124,8 @@ class TgExternalMessageService extends FromTgMessageService
 
             SendTelegramSimpleQueryJob::dispatch(TGTextMessageDto::from([
                 'methodQuery' => 'editForumTopic',
-                'chat_id' => config('traffic_source.settings.telegram.group_id'),
+                'token' => TelegramBotRegistry::token('default'),
+                'chat_id' => TelegramBotRegistry::groupId('default'),
                 'message_thread_id' => $this->botUser->topic_id,
                 'icon_custom_emoji_id' => __('icons.outgoing'),
             ]));

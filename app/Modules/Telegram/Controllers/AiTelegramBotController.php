@@ -6,6 +6,7 @@ use App\Actions\Ai\AiAcceptMessage;
 use App\Actions\Ai\AiCancelMessage;
 use App\Models\BotUser;
 use App\Modules\Telegram\DTOs\TelegramUpdateDto;
+use App\Modules\Telegram\Support\TelegramBotRegistry;
 use Illuminate\Http\Request;
 
 class AiTelegramBotController
@@ -25,7 +26,8 @@ class AiTelegramBotController
         if ($this->dataHook->typeSource === 'private') {
             $this->platform = 'telegram';
         } else {
-            $this->platform = BotUser::getPlatformByTopicId($this->dataHook->messageThreadId);
+            $slug = TelegramBotRegistry::findSlugByGroupId((string) ($this->dataHook->chatId ?? '')) ?? 'default';
+            $this->platform = BotUser::getPlatformByTopicId($this->dataHook->messageThreadId, $slug);
         }
     }
 

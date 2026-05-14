@@ -3,7 +3,6 @@
 namespace App\Modules\Telegram\DTOs;
 
 use App\Helpers\TelegramHelper;
-use App\Modules\Telegram\Support\TelegramBotRegistry;
 use Illuminate\Http\Request;
 use Spatie\LaravelData\Data;
 
@@ -32,8 +31,7 @@ use Spatie\LaravelData\Data;
  * @property array|null  $contact
  * @property array|null  $rawData
  * @property string      $telegramBotSlug
- * @property string      $telegramBotLabel
-*/
+ */
 class TelegramUpdateDto extends Data
 {
     public function __construct(
@@ -60,7 +58,6 @@ class TelegramUpdateDto extends Data
         public ?array  $contact = null,
         public ?array  $rawData = null,
         public string $telegramBotSlug = 'default',
-        public string $telegramBotLabel = '',
     ) {
     }
 
@@ -86,9 +83,8 @@ class TelegramUpdateDto extends Data
                 $aiTechMessage = false;
             }
 
-            $telegramBotSlug = (string) ($request->attributes->get('telegram_resolved_bot_slug')
-                ?? $request->route('telegram_bot_slug', 'default'));
-            $telegramBotLabel = TelegramBotRegistry::label($telegramBotSlug);
+            $rawSlug = $request->route('telegram_bot_slug');
+            $telegramBotSlug = is_string($rawSlug) && $rawSlug !== '' ? $rawSlug : 'default';
 
             return new self(
                 updateId: $data['update_id'] ?? 0,
@@ -114,7 +110,6 @@ class TelegramUpdateDto extends Data
                 contact: $data['message']['contact'] ?? null,
                 rawData: $data,
                 telegramBotSlug: $telegramBotSlug,
-                telegramBotLabel: $telegramBotLabel,
             );
         } catch (\Throwable $e) {
             return null;

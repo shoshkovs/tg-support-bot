@@ -5,6 +5,7 @@ namespace Tests\Unit\Modules\Telegram\Actions;
 use App\Models\BotUser;
 use App\Modules\Telegram\Actions\BanMessage;
 use App\Modules\Telegram\Jobs\SendTelegramMessageJob;
+use App\Modules\Telegram\Support\TelegramBotRegistry;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\Mocks\Tg\TelegramUpdateDto_GroupMock;
@@ -37,7 +38,7 @@ class BanMessageTest extends TestCase
 
         $firstJob = $pushed[0]['job'];
         $this->assertEquals($this->botUser->id, $firstJob->botUserId);
-        $this->assertEquals(config('traffic_source.settings.telegram.group_id'), $firstJob->queryParams->chat_id);
+        $this->assertEquals(TelegramBotRegistry::groupId('default'), $firstJob->queryParams->chat_id);
         $this->assertEquals('sendMessage', $firstJob->queryParams->methodQuery);
         $this->assertEquals(__('messages.ban_bot'), $firstJob->queryParams->text);
     }

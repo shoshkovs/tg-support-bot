@@ -6,6 +6,7 @@ use App\Models\BotUser;
 use App\Modules\Telegram\DTOs\TelegramUpdateDto;
 use App\Modules\Telegram\DTOs\TGTextMessageDto;
 use App\Modules\Telegram\Jobs\SendTelegramMessageJob;
+use App\Modules\Telegram\Support\TelegramBotRegistry;
 use Illuminate\Support\Facades\Log;
 use phpDocumentor\Reflection\Exception;
 
@@ -42,7 +43,7 @@ class AiAcceptMessage extends AiAction
                     'token' => config('traffic_source.settings.telegram_ai.token'),
                     'methodQuery' => 'editMessageText',
                     'typeSource' => 'supergroup',
-                    'chat_id' => config('traffic_source.settings.telegram.group_id'),
+                    'chat_id' => TelegramBotRegistry::groupId($botUser->telegram_bot_slug ?? 'default'),
                     'message_id' => $messageData->message_id,
                     'message_thread_id' => $update->messageThreadId,
                     'text' => $messageData->text_ai,

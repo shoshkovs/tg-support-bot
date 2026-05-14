@@ -6,6 +6,7 @@ use App\Models\BotUser;
 use App\Models\Message;
 use App\Modules\Telegram\Actions\BannedContactMessage;
 use App\Modules\Telegram\Jobs\SendTelegramSimpleQueryJob;
+use App\Modules\Telegram\Support\TelegramBotRegistry;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
@@ -38,7 +39,7 @@ class BannedContactMessageTest extends TestCase
         $job = $pushed[0]['job'];
 
         // Assert
-        $this->assertEquals(config('traffic_source.settings.telegram.group_id'), $job->queryParams->chat_id);
+        $this->assertEquals(TelegramBotRegistry::groupId('default'), $job->queryParams->chat_id);
         $this->assertEquals('sendMessage', $job->queryParams->methodQuery);
     }
 }

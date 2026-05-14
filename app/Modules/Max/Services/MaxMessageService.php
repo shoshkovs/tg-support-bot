@@ -6,6 +6,7 @@ use App\Models\BotUser;
 use App\Modules\Max\DTOs\MaxUpdateDto;
 use App\Modules\Telegram\DTOs\TGTextMessageDto;
 use App\Modules\Telegram\Jobs\SendMaxTelegramMessageJob;
+use App\Modules\Telegram\Support\TelegramBotRegistry;
 use App\Modules\Telegram\Services\ActionService\Send\ToTgMessageService;
 use Illuminate\Support\Facades\Log;
 
@@ -124,7 +125,7 @@ class MaxMessageService extends ToTgMessageService
     {
         $dto = TGTextMessageDto::from([
             'methodQuery' => 'sendPhoto',
-            'chat_id' => config('traffic_source.settings.telegram.group_id'),
+            'chat_id' => TelegramBotRegistry::groupId('default'),
             'message_thread_id' => $this->botUser->topic_id,
             'photo' => $url,
             'caption' => $caption !== '' ? $caption : null,
@@ -155,7 +156,7 @@ class MaxMessageService extends ToTgMessageService
     {
         $dto = TGTextMessageDto::from([
             'methodQuery' => 'sendDocument',
-            'chat_id' => config('traffic_source.settings.telegram.group_id'),
+            'chat_id' => TelegramBotRegistry::groupId('default'),
             'message_thread_id' => $this->botUser->topic_id,
             'document' => $url,
             'caption' => $caption !== '' ? $caption : null,
@@ -185,7 +186,7 @@ class MaxMessageService extends ToTgMessageService
     {
         $dto = TGTextMessageDto::from([
             'methodQuery' => 'sendVoice',
-            'chat_id' => config('traffic_source.settings.telegram.group_id'),
+            'chat_id' => TelegramBotRegistry::groupId('default'),
             'message_thread_id' => $this->botUser->topic_id,
             'voice' => $url,
         ]);
@@ -210,7 +211,7 @@ class MaxMessageService extends ToTgMessageService
     {
         $dto = TGTextMessageDto::from([
             'methodQuery' => 'sendMessage',
-            'chat_id' => config('traffic_source.settings.telegram.group_id'),
+            'chat_id' => TelegramBotRegistry::groupId('default'),
             'message_thread_id' => $this->botUser->topic_id,
             'text' => $this->update->text,
         ]);

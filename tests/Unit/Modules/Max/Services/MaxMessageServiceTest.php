@@ -5,6 +5,7 @@ namespace Tests\Unit\Modules\Max\Services;
 use App\Models\BotUser;
 use App\Modules\Max\Services\MaxMessageService;
 use App\Modules\Telegram\Jobs\SendMaxTelegramMessageJob;
+use App\Modules\Telegram\Support\TelegramBotRegistry;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\Mocks\Max\MaxUpdateDtoMock;
@@ -26,7 +27,7 @@ class MaxMessageServiceTest extends TestCase
 
         Queue::fake();
 
-        $this->groupChatId = config('traffic_source.settings.telegram.group_id');
+        $this->groupChatId = (string) TelegramBotRegistry::groupId('default');
 
         $payload = MaxUpdateDtoMock::getDtoParams();
         $chatId = $payload['message']['sender']['user_id'];

@@ -48,7 +48,7 @@ class TopicCreateJob implements ShouldQueue
             $botToken = TelegramBotRegistry::token($this->botUser->telegram_bot_slug ?? 'default');
 
             $response = TelegramMethods::sendQueryTelegram('createForumTopic', [
-                'chat_id' => config('traffic_source.settings.telegram.group_id'),
+                'chat_id' => TelegramBotRegistry::groupId($this->botUser->telegram_bot_slug ?? 'default'),
                 'name' => $topicName,
                 'icon_custom_emoji_id' => __('icons.incoming'),
             ], $botToken);
@@ -100,14 +100,6 @@ class TopicCreateJob implements ShouldQueue
                 $templateTopicName = str_replace('{platform}', $botUser->platform, $templateTopicName);
             }
 
-            if (preg_match('/\{telegram_bot_label\}/', $templateTopicName)) {
-                $templateTopicName = str_replace(
-                    '{telegram_bot_label}',
-                    TelegramBotRegistry::label($botUser->telegram_bot_slug ?? 'default'),
-                    $templateTopicName
-                );
-            }
-
             $nameParts = $this->getPartsGenerateName($botUser->chat_id, TelegramBotRegistry::token($botUser->telegram_bot_slug ?? 'default'));
             if (empty($nameParts)) {
                 throw new \Exception('Name parts not found');
@@ -131,12 +123,7 @@ class TopicCreateJob implements ShouldQueue
 
             return $topicName;
         } catch (\Throwable $e) {
-            $fallback = '#' . $botUser->chat_id . ' (' . $botUser->platform . ')';
-            if ($botUser->platform === 'telegram') {
-                return '【' . TelegramBotRegistry::label($botUser->telegram_bot_slug ?? 'default') . '】 ' . $fallback;
-            }
-
-            return $fallback;
+            return '#' . $botUser->chat_id . ' (' . $botUser->platform . ')';
         }
     }
 

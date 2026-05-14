@@ -4,6 +4,7 @@ namespace Tests\Unit\Modules\Vk\Services;
 
 use App\Models\BotUser;
 use App\Modules\Telegram\Jobs\SendVkTelegramMessageJob;
+use App\Modules\Telegram\Support\TelegramBotRegistry;
 use App\Modules\Vk\Services\VkMessageService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
@@ -26,7 +27,7 @@ class VkMessageServiceTest extends TestCase
 
         Queue::fake();
 
-        $this->groupChatId = config('traffic_source.settings.telegram.group_id');
+        $this->groupChatId = (string) TelegramBotRegistry::groupId('default');
 
         $chatId = time();
         $this->botUser = BotUser::getUserByChatId($chatId, 'vk');

@@ -5,6 +5,7 @@ namespace Tests\Unit\Modules\Vk\Services;
 use App\Models\BotUser;
 use App\Models\Message;
 use App\Modules\Telegram\Jobs\SendVkTelegramMessageJob;
+use App\Modules\Telegram\Support\TelegramBotRegistry;
 use App\Modules\Vk\Services\VkEditService;
 use App\Modules\Vk\Services\VkMessageService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -47,7 +48,7 @@ class VkEditServiceTest extends TestCase
 
         $this->assertEquals($dtoNewMessage->text, $jobData->queryParams->text);
         $this->assertEquals($this->botUser->topic_id, $jobData->queryParams->message_thread_id);
-        $this->assertEquals(config('traffic_source.settings.telegram.group_id'), $jobData->queryParams->chat_id);
+        $this->assertEquals(TelegramBotRegistry::groupId('default'), $jobData->queryParams->chat_id);
         $this->assertEquals($dtoNewMessage, $jobData->updateDto);
 
         $whereMessageParams = [
@@ -79,7 +80,7 @@ class VkEditServiceTest extends TestCase
 
         $this->assertEquals($dtoUpdateMessage->text, $jobData->queryParams->text);
         $this->assertEquals($this->botUser->topic_id, $jobData->queryParams->message_thread_id);
-        $this->assertEquals(config('traffic_source.settings.telegram.group_id'), $jobData->queryParams->chat_id);
+        $this->assertEquals(TelegramBotRegistry::groupId('default'), $jobData->queryParams->chat_id);
         $this->assertEquals($dtoUpdateMessage, $jobData->updateDto);
     }
 }

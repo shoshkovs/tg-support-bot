@@ -27,7 +27,7 @@ abstract class FromTgMessageService extends TemplateMessageService
             case 'private':
                 $this->typeMessage = 'incoming';
 
-                $groupId = config('traffic_source.settings.telegram.group_id');
+                $groupId = TelegramBotRegistry::groupId($update->telegramBotSlug);
                 $queryParams = [
                     'chat_id' => $groupId,
                     'message_thread_id' => $this->botUser->topic_id,

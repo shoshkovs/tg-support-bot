@@ -11,6 +11,7 @@ use App\Modules\Telegram\Api\TelegramMethods;
 use App\Modules\Telegram\DTOs\TelegramAnswerDto;
 use App\Modules\Telegram\DTOs\TelegramUpdateDto;
 use App\Modules\Telegram\DTOs\TGTextMessageDto;
+use App\Modules\Telegram\Support\TelegramBotRegistry;
 use App\Services\Ai\AiAssistantService;
 use Illuminate\Support\Facades\Log;
 
@@ -65,8 +66,11 @@ class SendAiTelegramMessageJob extends AbstractSendMessageJob
                 throw new \Exception('Failed to send request to AI!', 1);
             }
 
+            $slug = $botUser->telegram_bot_slug ?? 'default';
+            $supportGroupId = TelegramBotRegistry::groupId($slug);
+
             $response = $telegramMethods->sendQueryTelegram('sendMessage', [
-                'chat_id' => config('traffic_source.settings.telegram.group_id'),
+                'chat_id' => $supportGroupId,
                 'message_thread_id' => $botUser->topic_id,
                 'text' => AiHelper::preparedAiAnswer($this->managerTextMessage, $this->aiTextMessage),
                 'parse_mode' => 'html',
@@ -82,7 +86,7 @@ class SendAiTelegramMessageJob extends AbstractSendMessageJob
                         'token' => config('traffic_source.settings.telegram_ai.token'),
                         'methodQuery' => 'editMessageText',
                         'typeSource' => 'supergroup',
-                        'chat_id' => config('traffic_source.settings.telegram.group_id'),
+                        'chat_id' => $supportGroupId,
                         'message_id' => $response->message_id,
                         'message_thread_id' => $response->message_thread_id,
                         'text' => $response->text,

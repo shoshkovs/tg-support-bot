@@ -5,6 +5,7 @@ namespace App\Modules\External\Services;
 use App\Modules\External\DTOs\ExternalMessageDto;
 use App\Modules\Telegram\DTOs\TGTextMessageDto;
 use App\Modules\Telegram\Jobs\SendExternalTelegramMessageJob;
+use App\Modules\Telegram\Support\TelegramBotRegistry;
 use Illuminate\Support\Facades\Log;
 
 class ExternalFileService extends ExternalService
@@ -18,7 +19,7 @@ class ExternalFileService extends ExternalService
         $this->messageParamsDTO = TGTextMessageDto::from([
             'methodQuery' => 'sendDocument',
             'typeSource' => 'private',
-            'chat_id' => config('traffic_source.settings.telegram.group_id'),
+            'chat_id' => TelegramBotRegistry::groupId('default'),
             'message_thread_id' => $this->botUser->topic_id,
         ]);
     }

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Modules\External\DTOs\ExternalMessageDto;
 use App\Modules\Telegram\DTOs\TelegramUpdateDto;
+use App\Modules\Telegram\Support\TelegramBotRegistry;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -106,18 +107,24 @@ class BotUser extends Model
     /**
      * Get platform by topic id
      *
-     * @param int $messageThreadId
+     * @param int         $messageThreadId
+     * @param string|null $telegramBotSlug Ограничить по боту (группа форума); null — как раньше (последняя запись)
      *
      * @return string|null
      */
-    public static function getPlatformByTopicId(int $messageThreadId): ?string
+    public static function getPlatformByTopicId(int $messageThreadId, ?string $telegramBotSlug = null): ?string
     {
         try {
-            $botUser = self::select('platform')
-                ->where('topic_id', $messageThreadId)
-                ->first();
+            $query = self::select('platform')
+                ->where('topic_id', $messageThreadId);
 
-            return $botUser->platform ?? null;
+            if ($telegramBotSlug !== null) {
+                $query->where('telegram_bot_slug', $telegramBotSlug);
+            }
+
+            $botUser = $query->orderByDesc('id')->first();
+
+            return $botUser?->platform;
         } catch (\Throwable $e) {
             Log::channel('loki')->error('File: ' . $e->getFile() . '; Line: ' . $e->getLine() . '; Error: ' . $e->getMessage());
             return null;
@@ -135,7 +142,9 @@ class BotUser extends Model
     {
         try {
             if ($update->typeSource === 'supergroup' && !empty($update->messageThreadId)) {
+                $slug = TelegramBotRegistry::findSlugByGroupId((string) ($update->chatId ?? '')) ?? 'default';
                 $botUser = self::where('topic_id', $update->messageThreadId)
+                    ->where('telegram_bot_slug', $slug)
                     ->with('externalUser')
                     ->first();
             } elseif ($update->typeSource === 'private') {
@@ -157,21 +166,26 @@ class BotUser extends Model
     }
 
     /**
-     * @param int|null $messageThreadId
+     * @param int|null    $messageThreadId
+     * @param string|null $telegramBotSlug null — прежнее поведение (без фильтра по боту)
      *
      * @return BotUser|null
      */
-    public static function getByTopicId(?int $messageThreadId): ?BotUser
+    public static function getByTopicId(?int $messageThreadId, ?string $telegramBotSlug = null): ?BotUser
     {
         try {
             if ($messageThreadId) {
-                return self::where('topic_id', $messageThreadId)
-                    ->with('externalUser')
-                    ->orderByDesc('id')
-                    ->first();
-            } else {
-                return null;
+                $query = self::where('topic_id', $messageThreadId)
+                    ->with('externalUser');
+
+                if ($telegramBotSlug !== null) {
+                    $query->where('telegram_bot_slug', $telegramBotSlug);
+                }
+
+                return $query->orderByDesc('id')->first();
             }
+
+            return null;
         } catch (\Throwable $e) {
             return null;
         }

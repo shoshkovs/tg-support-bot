@@ -70,7 +70,7 @@ abstract class AbstractSendMessageJob implements ShouldQueue
     {
         SendTelegramSimpleQueryJob::dispatch(TGTextMessageDto::from([
             'methodQuery' => 'editForumTopic',
-            'chat_id' => config('traffic_source.settings.telegram.group_id'),
+            'chat_id' => TelegramBotRegistry::groupId($botUser->telegram_bot_slug ?? 'default'),
             'message_thread_id' => $botUser->topic_id,
             'icon_custom_emoji_id' => __('icons.' . $typeMessage),
             'token' => TelegramBotRegistry::token($botUser->telegram_bot_slug ?? 'default'),

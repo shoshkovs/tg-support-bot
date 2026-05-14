@@ -5,6 +5,7 @@ namespace App\Modules\Telegram\Actions;
 use App\Models\BotUser;
 use App\Modules\Telegram\DTOs\TGTextMessageDto;
 use App\Modules\Telegram\Jobs\SendTelegramMessageJob;
+use App\Modules\Telegram\Support\TelegramBotRegistry;
 
 class BanMessage
 {
@@ -25,8 +26,9 @@ class BanMessage
             $update,
             TGTextMessageDto::from([
                 'methodQuery' => 'sendMessage',
+                'token' => TelegramBotRegistry::token($botUser->telegram_bot_slug ?? 'default'),
                 'typeSource' => 'supergroup',
-                'chat_id' => config('traffic_source.settings.telegram.group_id'),
+                'chat_id' => TelegramBotRegistry::groupId($botUser->telegram_bot_slug ?? 'default'),
                 'message_thread_id' => $botUser->topic_id,
                 'text' => __('messages.ban_bot'),
                 'parse_mode' => 'html',

@@ -7,6 +7,7 @@ use App\Models\ExternalUser;
 use App\Models\Message;
 use App\Modules\External\DTOs\ExternalMessageDto;
 use App\Modules\Telegram\Api\TelegramMethods;
+use App\Modules\Telegram\Support\TelegramBotRegistry;
 use Illuminate\Support\Facades\Log;
 use phpDocumentor\Reflection\Exception;
 
@@ -51,11 +52,13 @@ class DeleteMessage
                 throw new Exception('Message not found!', 1);
             }
 
+            $slug = $botUser->telegram_bot_slug ?? 'default';
+
             TelegramMethods::sendQueryTelegram('deleteMessage', [
-                'chat_id' => config('traffic_source.settings.telegram.group_id'),
+                'chat_id' => TelegramBotRegistry::groupId($slug),
                 'message_id' => $messageData->to_id,
                 'message_thread_id' => $botUser->topic_id,
-            ]);
+            ], TelegramBotRegistry::token($slug));
 
             Message::where($whereParamsMessage)->delete();
         } catch (Exception $e) {
