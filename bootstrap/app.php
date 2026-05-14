@@ -39,7 +39,7 @@ return Application::configure(basePath: dirname(__DIR__))
             Log::channel('loki')->error('File: ' . $e->getFile() . '; Line: ' . $e->getLine() . '; Error: ' . $e->getMessage());
 
             if (env('APP_DEBUG') === false) {
-                return response('ok', 200);
+                return new \Symfony\Component\HttpFoundation\Response('ok', 200);
             }
         });
     })->create();
