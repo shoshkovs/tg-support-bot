@@ -31,10 +31,14 @@ class SendStartMessage
      */
     public function execute(TelegramUpdateDto $update): void
     {
+        $botUser = BotUser::getOrCreateByTelegramUpdate($update);
+        $botSlug = $botUser->telegram_bot_slug ?? 'default';
+        $token = \App\Modules\Telegram\Support\TelegramBotRegistry::token($botSlug);
+
         $this->telegramMethods->sendQueryTelegram('deleteMessage', [
             'chat_id' => $update->chatId,
             'message_id' => $update->messageId,
-        ]);
+        ], $token);
 
         if ($update->typeSource !== 'private') {
             return;
@@ -45,14 +49,13 @@ class SendStartMessage
 
         $messageParamsDTO = TGTextMessageDto::from([
             'methodQuery' => 'sendMessage',
+            'token' => $token,
             'chat_id' => $update->chatId,
             'message_thread_id' => $update->messageThreadId,
             'text' => $parsedMessage->text,
             'parse_mode' => 'html',
             'reply_markup' => $keyboard,
         ]);
-
-        $botUser = BotUser::getOrCreateByTelegramUpdate($update);
 
         SendTelegramMessageJob::dispatch(
             $botUser->id,

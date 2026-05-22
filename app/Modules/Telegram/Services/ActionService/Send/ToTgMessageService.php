@@ -40,10 +40,12 @@ abstract class ToTgMessageService extends TemplateMessageService
                 throw new \RuntimeException('User does not exist!');
             }
 
+            $botSlug = $this->botUser->telegram_bot_slug ?? 'default';
             $this->messageParamsDTO = TGTextMessageDto::from([
                 'methodQuery' => 'sendMessage',
                 'typeSource' => 'private',
-                'chat_id' => TelegramBotRegistry::groupId($this->botUser->telegram_bot_slug ?? 'default'),
+                'token' => TelegramBotRegistry::token($botSlug),
+                'chat_id' => TelegramBotRegistry::groupId($botSlug),
                 'message_thread_id' => $this->botUser->topic_id,
             ]);
         } catch (\RuntimeException $e) {

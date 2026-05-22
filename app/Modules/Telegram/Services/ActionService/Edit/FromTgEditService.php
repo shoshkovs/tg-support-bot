@@ -25,18 +25,24 @@ abstract class FromTgEditService extends TemplateEditService
             case 'private':
                 $this->typeMessage = 'incoming';
 
-                $groupId = TelegramBotRegistry::groupId($update->telegramBotSlug);
+                // Используем slug бота из BotUser для определения правильной группы
+                $botSlug = $this->botUser->telegram_bot_slug ?? 'default';
+                $groupId = TelegramBotRegistry::groupId($botSlug);
                 $queryParams = [
                     'chat_id' => $groupId,
                     'message_thread_id' => $this->botUser->topic_id,
                 ];
+                $token = TelegramBotRegistry::token($botSlug);
                 break;
 
             case 'supergroup':
                 $this->typeMessage = 'outgoing';
+                // Используем slug бота из BotUser для отправки ответа правильным ботом
+                $botSlug = $this->botUser->telegram_bot_slug ?? 'default';
                 $queryParams = [
                     'chat_id' => $this->botUser->chat_id,
                 ];
+                $token = TelegramBotRegistry::token($botSlug);
                 break;
 
             default:
@@ -45,7 +51,7 @@ abstract class FromTgEditService extends TemplateEditService
 
         $queryParams['methodQuery'] = 'sendMessage';
         $queryParams['typeSource'] = $update->typeSource;
-        $queryParams['token'] = TelegramBotRegistry::token($update->telegramBotSlug ?? 'default');
+        $queryParams['token'] = $token;
 
         $this->messageParamsDTO = TGTextMessageDto::from($queryParams);
     }
