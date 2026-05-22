@@ -44,6 +44,12 @@ return [
             'temperature' => env('GIGACHAT_TEMPERATURE', 0.7),
             'path_cert' => env('GIGACHAT_CERT_PATH', ''),
         ],
+        'aiservice' => [
+            'service_url' => env('AI_SERVICE_URL', 'http://ai-service:8000'),
+            'model' => env('AI_SERVICE_MODEL', 'deepseek-chat'),
+            'max_tokens' => env('AI_SERVICE_MAX_TOKENS', 2000),
+            'temperature' => env('AI_SERVICE_TEMPERATURE', 0.7),
+        ],
     ],
 
     /*

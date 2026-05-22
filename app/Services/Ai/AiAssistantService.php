@@ -67,6 +67,7 @@ class AiAssistantService
         $this->providers['openai'] = new OpenAiProvider();
         $this->providers['deepseek'] = new DeepSeekProvider();
         $this->providers['gigachat'] = new GigaChatProvider();
+        $this->providers['aiservice'] = new AiServiceProvider();
     }
 
     /**

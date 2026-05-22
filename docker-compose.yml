@@ -139,6 +139,31 @@ services:
         networks:
             - pet
 
+    ai-service:
+        build: ./ai-service
+        container_name: ai_service
+        restart: always
+        ports:
+            - "8000:8000"
+        environment:
+            - APP_NAME=AI Service
+            - DEBUG=false
+            - HOST=0.0.0.0
+            - PORT=8000
+            - CORS_ORIGINS=*
+            - DEEPSEEK_MODEL=deepseek-chat
+            - DEEPSEEK_TEMPERATURE=0.7
+            - DEEPSEEK_MAX_TOKENS=2000
+            - LOG_LEVEL=INFO
+        networks:
+            - pet
+        healthcheck:
+            test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/health', timeout=5.0)"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 5s
+
     loki:
         image: grafana/loki:latest
         container_name: loki
