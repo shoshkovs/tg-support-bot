@@ -99,12 +99,18 @@ class DeepSeekService:
                     thinking_enabled=True,
                     search_enabled=False
                 ):
+                    # Логируем структуру chunk для отладки
+                    logger.debug(f"Получен chunk: {chunk}")
+                    
                     if chunk['type'] == 'thinking':
                         thinking_process += chunk['content']
                     elif chunk['type'] == 'text':
                         full_response += chunk['content']
+                    else:
+                        # Логируем неизвестные типы
+                        logger.warning(f"Неизвестный тип chunk: {chunk['type']}, content: {chunk.get('content', 'N/A')}")
                 
-                logger.info("Ответ успешно сгенерирован через DeepSeek API")
+                logger.info(f"Ответ успешно сгенерирован через DeepSeek API. Длина ответа: {len(full_response)} символов")
                 
                 return {
                     "content": full_response,
