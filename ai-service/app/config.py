@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     PORT: int = 8000
     
     # CORS
-    CORS_ORIGINS: List[str] = ["*"]
+    CORS_ORIGINS: str = "*"
     
     # DeepSeek настройки
     DEEPSEEK_MODEL: str = "deepseek-chat"
