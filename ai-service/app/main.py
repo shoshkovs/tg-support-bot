@@ -157,13 +157,18 @@ async def chat_completions(request: ChatRequest):
         )
 
 
+class SimpleRequest(BaseModel):
+    """Упрощенный запрос с одним промптом"""
+    prompt: str = Field(..., description="Текст запроса пользователя")
+
+
 @app.post("/api/v1/chat/simple")
-async def simple_chat(prompt: str):
+async def simple_chat(request: SimpleRequest):
     """
     Упрощенный эндпоинт для быстрых запросов
     
     Args:
-        prompt: Текст запроса
+        request: Запрос с промптом
     
     Returns:
         Сгенерированный ответ
@@ -175,7 +180,7 @@ async def simple_chat(prompt: str):
                 detail="AI Service не инициализирован"
             )
         
-        messages = [{"role": "user", "content": prompt}]
+        messages = [{"role": "user", "content": request.prompt}]
         
         response = await deepseek_service.generate_response(messages=messages)
         
