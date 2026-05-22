@@ -9,10 +9,14 @@ RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
     git \
+    curl \
+    libcurl4-openssl-dev \
+    libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Копирование requirements.txt
+# Копирование requirements.txt и dsk библиотеки
 COPY requirements.txt .
+COPY dsk/ ./dsk/
 
 # Установка Python зависимостей
 RUN pip install --no-cache-dir -r requirements.txt
