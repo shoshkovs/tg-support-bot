@@ -16,12 +16,13 @@ return [
              */
             'bots' => (static function (): array {
                 $bots = [];
-                $tokenPrimary = env('TELEGRAM_TOKEN');
+                // Поддержка обоих вариантов: TELEGRAM_BOT_TOKEN (новый) и TELEGRAM_TOKEN (старый)
+                $tokenPrimary = env('TELEGRAM_BOT_TOKEN') ?? env('TELEGRAM_TOKEN');
                 if (! empty($tokenPrimary)) {
                     $bots['default'] = [
                         'token' => $tokenPrimary,
-                        'secret_key' => (string) env('TELEGRAM_SECRET_KEY', ''),
-                        'group_id' => (string) env('TELEGRAM_GROUP_ID', ''),
+                        'secret_key' => (string) (env('TELEGRAM_BOT_SECRET_KEY') ?? env('TELEGRAM_SECRET_KEY', '')),
+                        'group_id' => (string) (env('TELEGRAM_BOT_GROUP_ID') ?? env('TELEGRAM_GROUP_ID', '')),
                     ];
                 }
                 $tokenSecond = env('TELEGRAM_BOT2_TOKEN');
