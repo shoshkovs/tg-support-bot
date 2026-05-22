@@ -30,6 +30,15 @@ class DeepSeekService:
                 # Пытаемся инициализировать реальный API
                 try:
                     from dsk.api import DeepSeekAPI
+                    
+                    # Проверяем наличие cookies для Cloudflare bypass
+                    import os.path
+                    cookies_path = '/app/dsk/cookies.json'
+                    if not os.path.exists(cookies_path):
+                        logger.warning(f"Cloudflare cookies не найдены в {cookies_path}")
+                        logger.info("Для обхода Cloudflare нужно запустить: python -m dsk.bypass")
+                        logger.info("Или создать cookies.json вручную")
+                    
                     self.api = DeepSeekAPI(self.auth_token)
                     self.use_mock = False
                     logger.info("DeepSeek Service инициализирован с реальным API")
