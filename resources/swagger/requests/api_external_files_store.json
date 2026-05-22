@@ -1,0 +1,25 @@
+{
+    "api_external_files_store": {
+        "type": "object",
+        "required": [
+            "source",
+            "external_id",
+            "uploaded_file"
+        ],
+        "properties": {
+            "source": {
+                "type": "string",
+                "example": "live_chat"
+            },
+            "external_id": {
+                "type": "string",
+                "example": "u123"
+            },
+            "uploaded_file": {
+                "type": "string",
+                "format": "binary",
+                "description": "Файл для отправки"
+            }
+        }
+    }
+}

@@ -1,0 +1,26 @@
+parameters:
+    level: 6
+    paths:
+        - app
+        - routes
+    excludePaths:
+        - vendor
+        - storage
+        - bootstrap
+
+    errorFormat: table
+    checkMissingVarTagTypehint: false
+    inferPrivatePropertyTypeFromConstructor: true
+
+    ignoreErrors:
+        - identifier: missingType.iterableValue
+        - identifier: missingType.generics
+        - '#(?i)referenced with incorrect case#'
+        - '#Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage::with\(\)#'
+        - identifier: argument.type
+          path: app/Http/Controllers/PreviewController.php
+
+    reportUnmatchedIgnoredErrors: false
+
+includes:
+    - vendor/phpstan/phpstan/conf/bleedingEdge.neon

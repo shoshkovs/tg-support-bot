@@ -1,0 +1,38 @@
+{
+    "/api/external/{external_id}/files/": {
+        "post": {
+            "summary": "Отправка файла",
+            "operationId": "api_external_files_store",
+            "tags": [
+                "External Messages"
+            ],
+            "parameters": [
+                {
+                    "name": "external_id",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "string"
+                    },
+                    "description": "Внешний идентификатор пользователя",
+                    "example": "u123"
+                }
+            ],
+            "requestBody": {
+                "required": true,
+                "content": {
+                    "multipart/form-data": {
+                        "schema": {
+                            "$ref": "#/components/schemas/api_external_files_store"
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "200": {
+                    "description": "Файл успешно отправлен!"
+                }
+            }
+        }
+    }
+}

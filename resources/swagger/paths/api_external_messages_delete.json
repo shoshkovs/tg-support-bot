@@ -1,0 +1,55 @@
+{
+    "/api/external/{external_id}/messages/": {
+        "delete": {
+            "summary": "Удаление сообщения",
+            "operationId": "api_external_messages_delete",
+            "tags": [
+                "External Messages"
+            ],
+            "parameters": [
+                {
+                    "name": "external_id",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "string"
+                    },
+                    "description": "Внешний идентификатор пользователя",
+                    "example": "u123"
+                }
+            ],
+            "requestBody": {
+                "required": true,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/api_external_messages_delete"
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "200": {
+                    "description": "Сообщение успешно удалено!",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/api_external_messages_delete_response_200"
+                            }
+                        }
+                    }
+                },
+                "404": {
+                    "description": "Сообщение не найдено!",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/api_external_messages_delete_response_404"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
