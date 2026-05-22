@@ -93,22 +93,34 @@ class DeepSeekService:
                 full_response = ""
                 thinking_process = ""
                 
-                for chunk in self.api.chat_completion(
-                    chat_id,
-                    prompt,
-                    thinking_enabled=True,
-                    search_enabled=False
-                ):
-                    # Логируем структуру chunk для отладки
-                    logger.debug(f"Получен chunk: {chunk}")
+                logger.debug(f"Начинаем получение chunks от DeepSeek API...")
+                chunk_count = 0
+                
+                try:
+                    for chunk in self.api.chat_completion(
+                        chat_id,
+                        prompt,
+                        thinking_enabled=True,
+                        search_enabled=False
+                    ):
+                        chunk_count += 1
+                        # Логируем структуру chunk для отладки
+                        logger.debug(f"Chunk #{chunk_count}: {chunk}")
+                        
+                        if chunk['type'] == 'thinking':
+                            thinking_process += chunk['content']
+                            logger.debug(f"Добавлен thinking chunk, длина: {len(chunk['content'])}")
+                        elif chunk['type'] == 'text':
+                            full_response += chunk['content']
+                            logger.debug(f"Добавлен text chunk, длина: {len(chunk['content'])}")
+                        else:
+                            # Логируем неизвестные типы
+                            logger.warning(f"Неизвестный тип chunk: {chunk['type']}, content: {chunk.get('content', 'N/A')}")
                     
-                    if chunk['type'] == 'thinking':
-                        thinking_process += chunk['content']
-                    elif chunk['type'] == 'text':
-                        full_response += chunk['content']
-                    else:
-                        # Логируем неизвестные типы
-                        logger.warning(f"Неизвестный тип chunk: {chunk['type']}, content: {chunk.get('content', 'N/A')}")
+                    logger.info(f"Получено {chunk_count} chunks от API")
+                except Exception as e:
+                    logger.error(f"Ошибка при обработке chunks: {e}", exc_info=True)
+                    raise
                 
                 logger.info(f"Ответ успешно сгенерирован через DeepSeek API. Длина ответа: {len(full_response)} символов")
                 
