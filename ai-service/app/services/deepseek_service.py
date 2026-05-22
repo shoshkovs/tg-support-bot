@@ -100,12 +100,17 @@ class DeepSeekService:
                 chunk_count = 0
                 
                 try:
-                    for chunk in self.api.chat_completion(
+                    # Получаем генератор chunks
+                    chunks_generator = self.api.chat_completion(
                         chat_id,
                         prompt,
                         thinking_enabled=True,
                         search_enabled=False
-                    ):
+                    )
+                    logger.debug(f"Получен генератор: {type(chunks_generator)}")
+                    
+                    # Итерируем по chunks
+                    for chunk in chunks_generator:
                         chunk_count += 1
                         # Логируем структуру chunk для отладки
                         logger.debug(f"Chunk #{chunk_count}: {chunk}")
