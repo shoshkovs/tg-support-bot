@@ -1,41 +1,56 @@
 """
-DeepSeek Service - обертка для работы с DeepSeek4Free
+DeepSeek Service - обертка для работы с DeepSeek через dsk библиотеку
 """
 
 import logging
 import asyncio
 from typing import List, Dict, Any, Optional
-import httpx
+import os
 
 logger = logging.getLogger(__name__)
 
 
 class DeepSeekService:
-    """Сервис для работы с DeepSeek4Free"""
+    """Сервис для работы с DeepSeek через dsk библиотеку"""
     
     def __init__(self):
         """Инициализация сервиса"""
-        self.client: Optional[httpx.AsyncClient] = None
+        self.api = None
+        self.auth_token = None
         self.initialized = False
+        self.use_mock = True  # По умолчанию используем mock
         
     async def initialize(self):
-        """Инициализация HTTP клиента"""
+        """Инициализация DeepSeek API"""
         try:
-            self.client = httpx.AsyncClient(
-                timeout=60.0,
-                limits=httpx.Limits(max_keepalive_connections=5, max_connections=10)
-            )
+            # Получаем токен из переменных окружения
+            self.auth_token = os.getenv('DEEPSEEK_AUTH_TOKEN')
+            
+            if self.auth_token:
+                # Пытаемся инициализировать реальный API
+                try:
+                    from dsk.api import DeepSeekAPI
+                    self.api = DeepSeekAPI(self.auth_token)
+                    self.use_mock = False
+                    logger.info("DeepSeek Service инициализирован с реальным API")
+                except Exception as e:
+                    logger.warning(f"Не удалось инициализировать DeepSeek API: {e}. Используем mock.")
+                    self.use_mock = True
+            else:
+                logger.info("DEEPSEEK_AUTH_TOKEN не установлен. Используем mock-режим.")
+                self.use_mock = True
+            
             self.initialized = True
-            logger.info("DeepSeek Service инициализирован")
+            
         except Exception as e:
             logger.error(f"Ошибка инициализации DeepSeek Service: {e}")
-            raise
+            self.use_mock = True
+            self.initialized = True
     
     async def cleanup(self):
         """Очистка ресурсов"""
-        if self.client:
-            await self.client.aclose()
-            logger.info("DeepSeek Service остановлен")
+        self.api = None
+        logger.info("DeepSeek Service остановлен")
     
     async def generate_response(
         self,
@@ -45,7 +60,7 @@ class DeepSeekService:
         retry_count: int = 3
     ) -> Dict[str, Any]:
         """
-        Генерация ответа через DeepSeek4Free
+        Генерация ответа через DeepSeek
         
         Args:
             messages: История диалога в формате [{"role": "user", "content": "..."}]
@@ -56,26 +71,51 @@ class DeepSeekService:
         Returns:
             Dict с ключами: content, model, usage
         """
-        if not self.initialized or not self.client:
+        if not self.initialized:
             raise RuntimeError("DeepSeek Service не инициализирован")
         
-        # Пока используем заглушку, так как deepseek4free требует специальной настройки
-        # В реальной реализации здесь будет вызов библиотеки deepseek4free
+        # Если используем mock или API недоступен
+        if self.use_mock or not self.api:
+            return await self._mock_generate(messages, temperature, max_tokens)
         
+        # Реальная генерация через dsk
         for attempt in range(retry_count):
             try:
-                logger.info(f"Попытка {attempt + 1}/{retry_count} генерации ответа")
+                logger.info(f"Попытка {attempt + 1}/{retry_count} генерации ответа через DeepSeek API")
                 
-                # ВРЕМЕННАЯ ЗАГЛУШКА
-                # В реальной реализации здесь будет:
-                # from deepseek4free import DeepSeek
-                # response = await DeepSeek.create(messages=messages, ...)
+                # Создаем новую сессию чата
+                chat_id = self.api.create_chat_session()
                 
-                # Для демонстрации возвращаем mock-ответ
-                response = await self._mock_generate(messages, temperature, max_tokens)
+                # Формируем промпт из всех сообщений
+                prompt = self._format_messages(messages)
                 
-                logger.info("Ответ успешно сгенерирован")
-                return response
+                # Собираем ответ
+                full_response = ""
+                thinking_process = ""
+                
+                for chunk in self.api.chat_completion(
+                    chat_id,
+                    prompt,
+                    thinking_enabled=True,
+                    search_enabled=False
+                ):
+                    if chunk['type'] == 'thinking':
+                        thinking_process += chunk['content']
+                    elif chunk['type'] == 'text':
+                        full_response += chunk['content']
+                
+                logger.info("Ответ успешно сгенерирован через DeepSeek API")
+                
+                return {
+                    "content": full_response,
+                    "model": "deepseek-chat",
+                    "usage": {
+                        "prompt_tokens": sum(len(m["content"].split()) for m in messages),
+                        "completion_tokens": len(full_response.split()),
+                        "total_tokens": sum(len(m["content"].split()) for m in messages) + len(full_response.split())
+                    },
+                    "thinking_process": thinking_process if thinking_process else None
+                }
                 
             except Exception as e:
                 logger.error(f"Ошибка при генерации (попытка {attempt + 1}): {e}")
@@ -83,9 +123,36 @@ class DeepSeekService:
                 if attempt < retry_count - 1:
                     await asyncio.sleep(2 ** attempt)  # Exponential backoff
                 else:
-                    raise
+                    # Если все попытки неудачны, возвращаемся к mock
+                    logger.warning("Все попытки неудачны, используем mock-ответ")
+                    return await self._mock_generate(messages, temperature, max_tokens)
         
         raise RuntimeError("Не удалось сгенерировать ответ после всех попыток")
+    
+    def _format_messages(self, messages: List[Dict[str, str]]) -> str:
+        """
+        Форматирует историю сообщений в один промпт
+        
+        Args:
+            messages: Список сообщений
+            
+        Returns:
+            Отформатированный промпт
+        """
+        formatted = []
+        
+        for msg in messages:
+            role = msg.get("role", "user")
+            content = msg.get("content", "")
+            
+            if role == "system":
+                formatted.append(f"System: {content}")
+            elif role == "user":
+                formatted.append(f"User: {content}")
+            elif role == "assistant":
+                formatted.append(f"Assistant: {content}")
+        
+        return "\n\n".join(formatted)
     
     async def _mock_generate(
         self,
@@ -94,8 +161,8 @@ class DeepSeekService:
         max_tokens: int
     ) -> Dict[str, Any]:
         """
-        ВРЕМЕННАЯ ЗАГЛУШКА для тестирования
-        В продакшене заменить на реальный вызов DeepSeek4Free
+        MOCK-реализация для тестирования
+        Используется когда реальный API недоступен
         """
         # Симулируем задержку API
         await asyncio.sleep(0.5)
@@ -108,11 +175,18 @@ class DeepSeekService:
                 break
         
         # Генерируем mock-ответ
-        mock_response = f"Это тестовый ответ от AI Service. Ваш вопрос: '{user_message[:50]}...'"
+        mock_response = (
+            f"Это тестовый ответ от AI Service (mock-режим).\n\n"
+            f"Ваш вопрос: '{user_message[:100]}{'...' if len(user_message) > 100 else ''}'\n\n"
+            f"Для использования реального DeepSeek API:\n"
+            f"1. Получите токен на chat.deepseek.com\n"
+            f"2. Установите DEEPSEEK_AUTH_TOKEN в переменных окружения\n"
+            f"3. Перезапустите AI Service"
+        )
         
         return {
             "content": mock_response,
-            "model": "deepseek-chat",
+            "model": "deepseek-chat-mock",
             "usage": {
                 "prompt_tokens": sum(len(m["content"].split()) for m in messages),
                 "completion_tokens": len(mock_response.split()),
