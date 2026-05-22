@@ -84,16 +84,19 @@ class DeepSeekService:
                 logger.info(f"Попытка {attempt + 1}/{retry_count} генерации ответа через DeepSeek API")
                 
                 # Создаем новую сессию чата
+                logger.debug("Создаем новую сессию чата...")
                 chat_id = self.api.create_chat_session()
+                logger.debug(f"Создана сессия с ID: {chat_id}")
                 
                 # Формируем промпт из всех сообщений
                 prompt = self._format_messages(messages)
+                logger.debug(f"Сформирован промпт длиной {len(prompt)} символов: {prompt[:100]}...")
                 
                 # Собираем ответ
                 full_response = ""
                 thinking_process = ""
                 
-                logger.debug(f"Начинаем получение chunks от DeepSeek API...")
+                logger.debug(f"Вызываем chat_completion с параметрами: chat_id={chat_id}, thinking_enabled=True, search_enabled=False")
                 chunk_count = 0
                 
                 try:
